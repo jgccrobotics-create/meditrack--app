@@ -1,6 +1,6 @@
 # 🏥 MediTrack - Smart Medicine Scheduler
 
-**Live Website**: https://jgccrobotics-create.github.io/meditrack-app
+**Live Website**: https://jgccrobotics-create.github.io/meditrack--app/
 
 A complete medicine scheduling system with real-time health monitoring, built with Firebase and ESP32.
 
