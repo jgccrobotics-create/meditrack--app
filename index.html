@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediTrack - Smart Medicine Scheduler</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6b8cbc;
+            --accent: #ff7e5f;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+        }
+
+        .btn-accent:hover {
+            background: #ff6a4a;
+        }
+
+        .btn-refresh {
+            background: var(--success);
+        }
+
+        .btn-refresh:hover {
+            background: #218838;
+        }
+
+        .pulse-rate {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .pulse-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+
+        .pulse-status {
+            font-size: 1.2rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .schedule-list {
+            list-style: none;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .time-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .time-morning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .time-afternoon {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .time-night {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .qr-code-container {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin: 15px 0;
+        }
+
+        .firebase-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: var(--success);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-normal {
+            background: var(--success);
+        }
+
+        .status-elevated {
+            background: var(--warning);
+        }
+
+        .status-high {
+            background: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-pills"></i>
+                <h1>MediTrack</h1>
+            </div>
+            <p class="subtitle">Smart Medicine Scheduler - Live on GitHub Pages</p>
+        </header>
+
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-calendar-plus"></i> Schedule Medicine</h2>
+                </div>
+                <form id="schedule-form">
+                    <div class="form-group">
+                        <label for="medicine-name">Medicine Name</label>
+                        <input type="text" id="medicine-name" placeholder="e.g., Vitamin C, Pain Reliever" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Time Settings</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label for="medicine-period">Time of Day</label>
+                                <select id="medicine-period" required>
+                                    <option value="">Select Period</option>
+                                    <option value="morning">🌅 Morning</option>
+                                    <option value="afternoon">🌞 Afternoon</option>
+                                    <option value="night">🌙 Night</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="medicine-time">Exact Time</label>
+                                <input type="time" id="medicine-time" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="medicine-frequency">Frequency</label>
+                        <select id="medicine-frequency" required>
+                            <option value="">Select Frequency</option>
+                            <option value="once">Once</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-accent">
+                        <i class="fas fa-plus"></i> Add Schedule
+                    </button>
+                </form>
+
+                <!-- QR Code Section -->
+                <div class="qr-section">
+                    <h3 class="card-title"><i class="fas fa-qrcode"></i> Share Your Live App</h3>
+                    <p>Scan this QR code to open MediTrack on any device</p>
+                    
+                    <div class="qr-code-container">
+                        <div id="qrcode"></div>
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-secondary" onclick="downloadQRCode()">
+                            <i class="fas fa-download"></i> Download QR Code
+                        </button>
+                        <button class="btn btn-refresh" onclick="copyURL()">
+                            <i class="fas fa-copy"></i> Copy URL
+                        </button>
+                    </div>
+                    <p id="current-url" style="margin-top: 10px; font-size: 0.9rem; color: #666;"></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-heartbeat"></i> Live Pulse Monitor</h2>
+                    <button id="refresh-pulse-btn" class="btn btn-refresh">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="pulse-rate">
+                    <i class="fas fa-heart" style="font-size: 3rem; color: var(--accent);"></i>
+                    <div class="pulse-value" id="pulse-value">--</div>
+                    <div class="pulse-status" id="pulse-status">Waiting for ESP32 data...</div>
+                    <div id="last-updated" style="font-size: 0.8rem; color: #666; margin-top: 10px;">Last updated: --</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-list-alt"></i> Active Medicine Schedules</h2>
+                <button id="refresh-schedules-btn" class="btn btn-refresh">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <ul class="schedule-list" id="schedule-list">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-calendar-plus" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <h3>No Active Schedules</h3>
+                    <p>Add your first medicine schedule above!</p>
+                </div>
+            </ul>
+        </div>
+    </div>
+
+    <div class="firebase-status" id="firebase-status">
+        <i class="fas fa-database"></i>
+        <span>Firebase Connected</span>
+    </div>
+
+    <script>
+        // Firebase Configuration - CONNECTED TO YOUR DATABASE
+        const firebaseConfig = {
+            databaseURL: "https://test-60a8c-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // SMART QR Code Generator - Uses current live URL
+        function generateQRCode() {
+            const liveURL = window.location.href;
+            document.getElementById('current-url').textContent = `Live URL: ${liveURL}`;
+            
+            const qrcodeElement = document.getElementById('qrcode');
+            qrcodeElement.innerHTML = '';
+            
+            QRCode.toCanvas(qrcodeElement, liveURL, {
+                width: 200,
+                height: 200,
+                colorDark: '#4a6fa5',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            console.log('🎯 QR Code generated for live URL:', liveURL);
+        }
+
+        function downloadQRCode() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'meditrack-live-qrcode.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                alert('✅ QR Code downloaded!');
+            }
+        }
+
+        function copyURL() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('✅ URL copied to clipboard!');
+        }
+
+        // Firebase Connection Status
+        database.ref(".info/connected").on("value", (snap) => {
+            const statusElement = document.getElementById('firebase-status');
+            if (snap.val() === true) {
+                statusElement.innerHTML = '<i class="fas fa-database"></i><span>Firebase Connected</span>';
+                statusElement.style.background = '#28a745';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-database"></i><span>Firebase Offline</span>';
+                statusElement.style.background = '#dc3545';
+            }
+        });
+
+        // Load Schedules from Firebase
+        function loadSchedules() {
+            database.ref('schedules').on('value', (snapshot) => {
+                const schedules = snapshot.val();
+                const scheduleList = document.getElementById('schedule-list');
+                scheduleList.innerHTML = '';
+                
+                if (schedules && Object.keys(schedules).length > 0) {
+                    Object.keys(schedules).forEach(key => {
+                        const schedule = schedules[key];
+                        const li = document.createElement('li');
+                        li.className = 'schedule-item';
+                        li.innerHTML = `
+                            <div style="flex-grow: 1;">
+                                <div style="font-weight: 600; font-size: 1.2rem; color: #4a6fa5; margin-bottom: 8px;">
+                                    ${schedule.name}
+                                </div>
+                                <div style="color: #666; margin-bottom: 5px;">
+                                    <span class="time-badge time-${schedule.period}">
+                                        ${schedule.period === 'morning' ? '🌅 Morning' : 
+                                          schedule.period === 'afternoon' ? '🌞 Afternoon' : '🌙 Night'}
+                                    </span>
+                                    <strong>Time: ${schedule.exactTime}</strong>
+                                </div>
+                                <div style="color: #333; font-size: 0.9rem;">
+                                    ${schedule.frequency}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="deleteSchedule('${key}')" style="background: none; border: none; cursor: pointer; color: #666;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                        scheduleList.appendChild(li);
+                    });
+                } else {
+                    scheduleList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-calendar-plus" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                            <h3>No Active Schedules</h3>
+                            <p>Add your first medicine schedule above!</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Monitor Pulse Rate from ESP32
+        function monitorPulseRate() {
+            database.ref('pulseRate').on('value', (snapshot) => {
+                const pulseData = snapshot.val();
+                if (pulseData && pulseData.value) {
+                    document.getElementById('pulse-value').textContent = pulseData.value;
+                    
+                    let statusHTML = '';
+                    if (pulseData.value < 60) {
+                        statusHTML = '<span class="status-indicator status-high"></span>Low Pulse Rate';
+                    } else if (pulseData.value < 80) {
+                        statusHTML = '<span class="status-indicator status-normal"></span>Normal Pulse Rate';
+                    } else if (pulseData.value < 100) {
+                        statusHTML = '<span class="status-indicator status-elevated"></span>Elevated Pulse Rate';
+                    } else {
+                        statusHTML = '<span class="status-indicator status-high"></span>High Pulse Rate';
+                    }
+                    
+                    document.getElementById('pulse-status').innerHTML = statusHTML;
+                    document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                }
+            });
+        }
+
+        // Save Schedule to Firebase
+        function saveToFirebase(name, period, exactTime, frequency) {
+            const newKey = database.ref().child('schedules').push().key;
+            const scheduleData = {
+                name: name,
+                period: period,
+                exactTime: exactTime,
+                frequency: frequency,
+                createdAt: new Date().toISOString()
+            };
+            
+            return database.ref('schedules/' + newKey).set(scheduleData);
+        }
+
+        // Delete Schedule
+        function deleteSchedule(key) {
+            if (confirm('Are you sure you want to delete this schedule?')) {
+                database.ref('schedules/' + key).remove();
+            }
+        }
+
+        // Set default time to current time + 5 minutes
+        function setDefaultTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const timeString = now.toTimeString().slice(0, 5);
+            document.getElementById('medicine-time').value = timeString;
+        }
+
+        // Form Submission
+        document.getElementById('schedule-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('medicine-name').value;
+            const period = document.getElementById('medicine-period').value;
+            const time = document.getElementById('medicine-time').value;
+            const frequency = document.getElementById('medicine-frequency').value;
+            
+            saveToFirebase(name, period, time, frequency)
+                .then(() => {
+                    alert(`✅ ${name} scheduled for ${time} (${period})`);
+                    document.getElementById('schedule-form').reset();
+                    setDefaultTime();
+                })
+                .catch(error => {
+                    alert('❌ Error saving schedule');
+                    console.error(error);
+                });
+        });
+
+        // Refresh Buttons
+        document.getElementById('refresh-pulse-btn').addEventListener('click', () => {
+            alert('Refreshing pulse data...');
+        });
+
+        document.getElementById('refresh-schedules-btn').addEventListener('click', () => {
+            loadSchedules();
+            alert('Schedules refreshed!');
+        });
+
+        // Initialize App
+        function initApp() {
+            setDefaultTime();
+            generateQRCode();
+            loadSchedules();
+            monitorPulseRate();
+            
+            // Check for medicine reminders every minute
+            setInterval(() => {
+                const currentTime = new Date().toTimeString().slice(0, 5);
+                database.ref('schedules').once('value').then((snapshot) => {
+                    const schedules = snapshot.val();
+                    if (schedules) {
+                        Object.keys(schedules).forEach(key => {
+                            const schedule = schedules[key];
+                            if (schedule.exactTime === currentTime) {
+                                alert(`💊 REMINDER: Time to take ${schedule.name}!`);
+                            }
+                        });
+                    }
+                });
+            }, 60000);
+            
+            console.log('🚀 MediTrack Fully Live on GitHub Pages!');
+            console.log('📱 QR Code points to:', window.location.href);
+        }
+
+        // Start the application
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
