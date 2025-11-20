@@ -1,285 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>MediTrack - Smart Medicine Scheduler</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         :root {
-            --primary: #4a6fa5;
-            --secondary: #6b8cbc;
-            --accent: #ff7e5f;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
+            --primary: #4a6fa5; --secondary: #6b8cbc; --accent: #ff7e5f;
+            --light: #f8f9fa; --dark: #343a40; --success: #28a745;
+            --warning: #ffc107; --danger: #dc3545;
         }
-
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: var(--dark);
+            min-height: 100vh; padding: 20px; color: var(--dark);
         }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        header { text-align: center; padding: 20px 0; margin-bottom: 20px; }
+        .logo { display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:10px;}
+        .logo i { font-size:2.5rem; color:var(--primary); }
+        h1 { color:var(--primary); font-size:2.2rem; margin-bottom:5px; }
+        .subtitle { color:var(--secondary); font-size:1.1rem; }
 
-        header {
-            text-align: center;
-            padding: 20px 0;
-            margin-bottom: 30px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-
-        .logo i {
-            font-size: 2.5rem;
-            color: var(--primary);
-        }
-
-        h1 {
-            color: var(--primary);
-            font-size: 2.2rem;
-            margin-bottom: 5px;
-        }
-
-        .subtitle {
-            color: var(--secondary);
-            font-size: 1.1rem;
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 25px;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-        }
+        .top-cards { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 22px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+        @media (max-width: 768px) { .dashboard { grid-template-columns: 1fr; } .top-cards { grid-template-columns: 1fr; } }
 
         .card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            padding: 25px;
-            margin-bottom: 25px;
-            transition: transform 0.3s ease;
+            background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 20px; margin-bottom: 20px; transition: transform 0.25s ease;
         }
+        .card:hover { transform: translateY(-5px); }
+        .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:10px; border-bottom:1px solid #eee; }
+        .card-title { font-size:1.2rem; color:var(--primary); display:flex; align-items:center; gap:10px; }
 
-        .card:hover {
-            transform: translateY(-5px);
-        }
+        .form-group { margin-bottom: 16px; }
+        label { display:block; margin-bottom:8px; font-weight:600; color:var(--dark); }
+        input, select { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(74,111,165,0.08); }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
+        .btn { display:inline-block; padding:10px 18px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; }
+        .btn:hover { transform: translateY(-2px); background: var(--secondary); }
+        .btn-accent { background: var(--accent); }
+        .btn-refresh { background: var(--success); }
+        .btn-secondary { background: #6c757d; color: #fff; }
 
-        .card-title {
-            font-size: 1.4rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .pulse-rate { text-align:center; padding: 18px; }
+        .pulse-value { font-size: 3rem; font-weight:700; color:var(--primary); margin:12px 0; }
+        .pulse-status { font-size:1rem; color:var(--secondary); margin-bottom:10px; }
+        .schedule-list { list-style:none; padding:0; }
+        .schedule-item { display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:12px; background:#f8f9fa; border-radius:10px; border-left:5px solid var(--primary); }
+        .time-badge { display:inline-block; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:600; margin-right:8px; }
+        .time-morning { background:#fff3cd; color:#856404; }
+        .time-afternoon { background:#d1ecf1; color:#0c5460; }
+        .time-night { background:#e2e3e5; color:#383d41; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .qr-section { text-align:center; padding:16px; background:#f8f9fa; border-radius:10px; margin-top:12px; }
+        .qr-code-container { display:inline-block; padding:12px; background:white; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.08); }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--dark);
-        }
+        .firebase-status { position: fixed; bottom: 20px; right: 20px; padding: 10px 15px; background: var(--success); color: white; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap:8px; box-shadow: 0 3px 10px rgba(0,0,0,0.18);}
+        .status-indicator { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:8px; }
+        .status-normal { background:var(--success); } .status-elevated { background:var(--warning);} .status-high { background:var(--danger);}
 
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-        }
-
-        .btn-accent {
-            background: var(--accent);
-        }
-
-        .btn-accent:hover {
-            background: #ff6a4a;
-        }
-
-        .btn-refresh {
-            background: var(--success);
-        }
-
-        .btn-refresh:hover {
-            background: #218838;
-        }
-
-        .pulse-rate {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .pulse-value {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 15px 0;
-        }
-
-        .pulse-status {
-            font-size: 1.2rem;
-            color: var(--secondary);
-            margin-bottom: 10px;
-        }
-
-        .schedule-list {
-            list-style: none;
-        }
-
-        .schedule-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 5px solid var(--primary);
-        }
-
-        .time-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-right: 10px;
-        }
-
-        .time-morning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .time-afternoon {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .time-night {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .qr-section {
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .qr-code-container {
-            display: inline-block;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin: 15px 0;
-        }
-
-        .firebase-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: var(--success);
-            color: white;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-normal {
-            background: var(--success);
-        }
-
-        .status-elevated {
-            background: var(--warning);
-        }
-
-        .status-high {
-            background: var(--danger);
-        }
+        /* Temperature card specifics */
+        .temp-grid { display:flex; gap:18px; align-items:center; justify-content:space-between; }
+        .temp-value-large { font-size: 2.6rem; font-weight:800; color:var(--accent); }
+        .hum-value { font-size:1.2rem; color:var(--primary); font-weight:700; }
+        @media (max-width:700px) { .temp-grid { flex-direction:column; align-items:flex-start; } }
     </style>
 </head>
 <body>
@@ -292,6 +84,39 @@
             <p class="subtitle">Smart Medicine Scheduler - Live on GitHub Pages</p>
         </header>
 
+        <!-- NEW: Temperature & Humidity Card (placed at the very top - Option C) -->
+        <div class="top-cards">
+            <div class="card" id="dht-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-thermometer-half"></i> Live Temperature & Humidity</h2>
+                    <div>
+                        <button id="refresh-temp-btn" class="btn btn-refresh" title="Refresh readings">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="temp-grid" style="padding:6px 4px;">
+                    <div>
+                        <div style="font-size:0.9rem; color:#666;">Temperature</div>
+                        <div class="temp-value-large" id="temp-value">-- °C</div>
+                        <div id="temp-last-updated" style="font-size:0.85rem; color:#666; margin-top:6px;">Last updated: --</div>
+                    </div>
+
+                    <div style="text-align:right;">
+                        <div style="font-size:0.9rem; color:#666;">Humidity</div>
+                        <div class="hum-value" id="hum-value">-- %</div>
+                        <div id="hum-last-updated" style="font-size:0.85rem; color:#666; margin-top:6px;">Last updated: --</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px; color:#555; font-size:0.95rem;">
+                    Data source: <strong>Robot → ESP32 → Firebase</strong>. The interface updates automatically when your robot pushes new DHT readings.
+                </div>
+            </div>
+        </div>
+
+        <!-- existing dashboard -->
         <div class="dashboard">
             <div class="card">
                 <div class="card-header">
@@ -302,7 +127,7 @@
                         <label for="medicine-name">Medicine Name</label>
                         <input type="text" id="medicine-name" placeholder="e.g., Vitamin C, Pain Reliever" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Time Settings</label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -321,7 +146,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="medicine-frequency">Frequency</label>
                         <select id="medicine-frequency" required>
@@ -331,21 +156,22 @@
                             <option value="weekly">Weekly</option>
                         </select>
                     </div>
+
                     <button type="submit" class="btn btn-accent">
                         <i class="fas fa-plus"></i> Add Schedule
                     </button>
                 </form>
 
                 <!-- QR Code Section -->
-                <div class="qr-section">
+                <div class="qr-section" style="margin-top:14px;">
                     <h3 class="card-title"><i class="fas fa-qrcode"></i> Share Your Live App</h3>
                     <p>Scan this QR code to open MediTrack on any device</p>
-                    
+
                     <div class="qr-code-container">
                         <div id="qrcode"></div>
                     </div>
-                    
-                    <div style="margin-top: 15px;">
+
+                    <div style="margin-top: 12px;">
                         <button class="btn btn-secondary" onclick="downloadQRCode()">
                             <i class="fas fa-download"></i> Download QR Code
                         </button>
@@ -401,7 +227,7 @@
             databaseURL: "https://test-60a8c-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase (v8)
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -409,10 +235,10 @@
         function generateQRCode() {
             const liveURL = window.location.href;
             document.getElementById('current-url').textContent = `Live URL: ${liveURL}`;
-            
+
             const qrcodeElement = document.getElementById('qrcode');
             qrcodeElement.innerHTML = '';
-            
+
             QRCode.toCanvas(qrcodeElement, liveURL, {
                 width: 200,
                 height: 200,
@@ -420,7 +246,7 @@
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
-            
+
             console.log('🎯 QR Code generated for live URL:', liveURL);
         }
 
@@ -431,7 +257,8 @@
                 link.download = 'meditrack-live-qrcode.png';
                 link.href = canvas.toDataURL();
                 link.click();
-                alert('✅ QR Code downloaded!');
+            } else {
+                alert('QR code not ready yet.');
             }
         }
 
@@ -458,7 +285,7 @@
                 const schedules = snapshot.val();
                 const scheduleList = document.getElementById('schedule-list');
                 scheduleList.innerHTML = '';
-                
+
                 if (schedules && Object.keys(schedules).length > 0) {
                     Object.keys(schedules).forEach(key => {
                         const schedule = schedules[key];
@@ -471,7 +298,7 @@
                                 </div>
                                 <div style="color: #666; margin-bottom: 5px;">
                                     <span class="time-badge time-${schedule.period}">
-                                        ${schedule.period === 'morning' ? '🌅 Morning' : 
+                                        ${schedule.period === 'morning' ? '🌅 Morning' :
                                           schedule.period === 'afternoon' ? '🌞 Afternoon' : '🌙 Night'}
                                     </span>
                                     <strong>Time: ${schedule.exactTime}</strong>
@@ -504,9 +331,9 @@
         function monitorPulseRate() {
             database.ref('pulseRate').on('value', (snapshot) => {
                 const pulseData = snapshot.val();
-                if (pulseData && pulseData.value) {
+                if (pulseData && pulseData.value !== undefined && pulseData.value !== null) {
                     document.getElementById('pulse-value').textContent = pulseData.value;
-                    
+
                     let statusHTML = '';
                     if (pulseData.value < 60) {
                         statusHTML = '<span class="status-indicator status-high"></span>Low Pulse Rate';
@@ -517,9 +344,38 @@
                     } else {
                         statusHTML = '<span class="status-indicator status-high"></span>High Pulse Rate';
                     }
-                    
+
                     document.getElementById('pulse-status').innerHTML = statusHTML;
                     document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                } else {
+                    document.getElementById('pulse-status').textContent = 'Waiting for ESP32 data...';
+                }
+            });
+        }
+
+        // LISTEN TO TEMPERATURE & HUMIDITY (root keys: 'temperature' and 'humidity')
+        function listenTemperatureHumidity() {
+            const tempRef = database.ref('temperature');
+            const humRef = database.ref('humidity');
+
+            tempRef.on('value', (snap) => {
+                const temp = snap.val();
+                if (temp !== null && temp !== undefined) {
+                    document.getElementById('temp-value').textContent = parseFloat(temp).toFixed(1) + ' °C';
+                    document.getElementById('temp-last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                    document.getElementById('temp-status')?.remove?.(); // keep UI tidy if status exists earlier
+                } else {
+                    document.getElementById('temp-value').textContent = '-- °C';
+                }
+            });
+
+            humRef.on('value', (snap) => {
+                const hum = snap.val();
+                if (hum !== null && hum !== undefined) {
+                    document.getElementById('hum-value').textContent = parseFloat(hum).toFixed(0) + ' %';
+                    document.getElementById('hum-last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                } else {
+                    document.getElementById('hum-value').textContent = '-- %';
                 }
             });
         }
@@ -534,7 +390,7 @@
                 frequency: frequency,
                 createdAt: new Date().toISOString()
             };
-            
+
             return database.ref('schedules/' + newKey).set(scheduleData);
         }
 
@@ -560,7 +416,7 @@
             const period = document.getElementById('medicine-period').value;
             const time = document.getElementById('medicine-time').value;
             const frequency = document.getElementById('medicine-frequency').value;
-            
+
             saveToFirebase(name, period, time, frequency)
                 .then(() => {
                     alert(`✅ ${name} scheduled for ${time} (${period})`);
@@ -583,13 +439,33 @@
             alert('Schedules refreshed!');
         });
 
+        // Manual refresh for temp
+        document.getElementById('refresh-temp-btn').addEventListener('click', () => {
+            // a manual quick read: read current values once
+            database.ref('temperature').once('value').then(snap => {
+                const v = snap.val();
+                if (v !== null) {
+                    document.getElementById('temp-value').textContent = parseFloat(v).toFixed(1) + ' °C';
+                    document.getElementById('temp-last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                }
+            });
+            database.ref('humidity').once('value').then(snap => {
+                const v = snap.val();
+                if (v !== null) {
+                    document.getElementById('hum-value').textContent = parseFloat(v).toFixed(0) + ' %';
+                    document.getElementById('hum-last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                }
+            });
+        });
+
         // Initialize App
         function initApp() {
             setDefaultTime();
             generateQRCode();
             loadSchedules();
             monitorPulseRate();
-            
+            listenTemperatureHumidity();
+
             // Check for medicine reminders every minute
             setInterval(() => {
                 const currentTime = new Date().toTimeString().slice(0, 5);
@@ -605,16 +481,17 @@
                     }
                 });
             }, 60000);
-            
+
             console.log('🚀 MediTrack Fully Live on GitHub Pages!');
             console.log('📱 QR Code points to:', window.location.href);
         }
 
-        // Start the application
         window.addEventListener('load', initApp);
     </script>
-<script>
-(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="Tb8r3uXWe2hnpCTqUpPyP";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
-</script>
+
+    <!-- chatbase embed (kept as original) -->
+    <script>
+    (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="Tb8r3uXWe2hnpCTqUpPyP";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+    </script>
 </body>
 </html>
