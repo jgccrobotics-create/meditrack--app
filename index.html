@@ -245,9 +245,14 @@
     <script>
         // Firebase Configuration
         const firebaseConfig = {
-            databaseURL: "https://test-60a8c-default-rtdb.asia-southeast1.firebasedatabase.app/"
-        };
-
+  apiKey: "AIzaSyClIkKZ13yMfuLXz1hSkxpdP9FShomC07U",
+  authDomain: "test-60a8c.firebaseapp.com",
+  databaseURL: "https://test-60a8c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "test-60a8c",
+  storageBucket: "test-60a8c.firebasestorage.app",
+  messagingSenderId: "646366568686",
+  appId: "1:646366568686:web:d9c125c3b5985a94cb13ff"
+};
         // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -304,7 +309,7 @@
 
         // Load Schedules from Firebase
         function loadSchedules() {
-            function loadSchedules() {
+           
     database.ref('schedules').on('value', (snapshot) => {
         const schedules = snapshot.val();
         const scheduleList = document.getElementById('schedule-list');
